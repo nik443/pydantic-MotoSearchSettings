@@ -23,8 +23,8 @@ class MotoConstructionTypes:
 
 @dataclass
 class TactX:
-    x_2 = "двухтактный"
-    x_4 = "четырехтактный"
+    x_2: str = "двухтактный"
+    x_4: str = "четырехтактный"
 
 
 class PriceRange(pydantic.BaseModel):
@@ -68,6 +68,8 @@ class EngineDisplacement(pydantic.BaseModel):
 class MotoSearchSettings(pydantic.BaseModel):
     model: str | None = pydantic.Field(default=None, serialization_alias="Model")
     constuction_types: list[str] | None = pydantic.Field(default=None, serialization_alias="ConstructionTypes")
+    engine_displacement: EngineDisplacement | None = pydantic.Field(serialization_alias="EngineDisplacement")
+    tact_x: str | None
 
     @pydantic.field_validator("model")
     def is_correct_model(cls, model: str):
@@ -79,9 +81,6 @@ class MotoSearchSettings(pydantic.BaseModel):
 
     @pydantic.field_validator("constuction_types")
     def is_correct_model(cls, user_constuction_types: list[str]):
-        if not user_constuction_types:
-            return None
-
         correct_construction_types = astuple(MotoConstructionTypes())
         correct_user_types = []
         for constuction_type in user_constuction_types:
@@ -89,12 +88,16 @@ class MotoSearchSettings(pydantic.BaseModel):
                 correct_user_types.append(constuction_type)
         return correct_user_types if correct_user_types else None
 
+    @pydantic.field_validator("tact_x")
+    def is_correct_tact_x(cls, tact_x):
+        return tact_x if tact_x in astuple(TactX()) else None
+
 
 data = {
     "model": Models.honda,
-    "constuction_types": [MotoConstructionTypes.child, "Uncorrect", MotoConstructionTypes.cross,],
+    "constuction_types": [],
+    "engine_displacement": EngineDisplacement.model_validate(obj={"start_range": 1, "finish_range": 99}),
+    "tact_x": TactX.x_2,
 }
 moto_search = MotoSearchSettings.model_validate(obj=data)
 res = moto_search.model_dump()
-
-a = 1
